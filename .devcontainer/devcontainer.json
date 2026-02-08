@@ -23,6 +23,12 @@
         "terminal.integrated.defaultProfile.linux": "bash",
         "editor.formatOnSave": false,
         "files.eol": "\n",
+        "files.associations": {
+          "*.php": "php",
+          "*.md": "markdown"
+        },
+        "workbench.secondarySideBar.defaultVisibility": false,
+        "chat.commandCenter.enabled": false,
         
         // Xdebug configuration
         "php.debug.executablePath": "/usr/local/bin/php",
@@ -45,7 +51,7 @@
 
   // Команды жизненного цикла
   "postCreateCommand": "composer install && php bin/setup-db.php",
-  "postStartCommand": "cat .devcontainer/welcome.txt",
+  "postStartCommand": "cat .devcontainer/welcome.txt && echo && sed -n '1,160p' README.md",
 
   // Features (дополнительные инструменты)
   "features": {

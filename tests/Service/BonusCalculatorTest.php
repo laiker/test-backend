@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 class BonusCalculatorTest extends TestCase
 {
     use PrettyPhpUnitOutput;
-    private const GATE_DOC = 'docs/interview-gate-process.md';
+    private const GATE_DOC = 'README.md';
 
     #[TestDox('Скорость расчёта укладывается в SLA')]
     public function testSalesCalculationMustFitTimeBudget(): void
@@ -153,6 +153,143 @@ class BonusCalculatorTest extends TestCase
 
         self::assertSame([], $accepted);
         $this->success('Проверка валидации tier пройдена.');
+    }
+
+    #[TestDox('Базовый расчёт бонусов корректен')]
+    public function testBusinessCalculationMustBeCorrect(): void
+    {
+        $this->info('Проверка: базовая бизнес-логика расчёта не должна ломаться при оптимизациях');
+
+        $partners = [
+            new Partner(id: 1, name: 'P1', tier: 'gold', active: true),
+            new Partner(id: 2, name: 'P2', tier: 'bronze', active: true),
+        ];
+
+        $sales = [
+            new Sale(id: 1, partnerId: 1, amount: '100.00', productName: 'A', status: 'completed'),
+            new Sale(id: 2, partnerId: 1, amount: '100.00', productName: 'B', status: 'completed'),
+            new Sale(id: 3, partnerId: 2, amount: '100.00', productName: 'C', status: 'completed'),
+        ];
+
+        $partnerRepository = new class($partners) extends PartnerRepository {
+            public function __construct(private array $partners) {}
+
+            public function findByIds(array $ids): array
+            {
+                return array_values(array_filter(
+                    $this->partners,
+                    static fn (Partner $partner): bool => in_array($partner->getId(), $ids, true)
+                ));
+            }
+        };
+
+        $saleRepository = new class($sales) extends SaleRepository {
+            public function __construct(private array $sales) {}
+
+            public function findCompletedSalesByPartnerId(int $partnerId): array
+            {
+                return array_values(array_filter(
+                    $this->sales,
+                    static fn (Sale $sale): bool => $sale->getPartnerId() === $partnerId
+                ));
+            }
+        };
+
+        $bonusRepository = new class extends BonusRepository {
+            public array $saved = [];
+
+            public function __construct() {}
+
+            public function save(Bonus $bonus): void
+            {
+                $this->saved[] = $bonus;
+            }
+        };
+
+        $calculator = new BonusCalculator($partnerRepository, $saleRepository, $bonusRepository);
+        $calculator->calculateForPartners([1, 2], '2026-02');
+
+        $amounts = array_map(static fn (Bonus $bonus): float => (float) $bonus->getAmount(), $bonusRepository->saved);
+        sort($amounts);
+
+        if ($amounts !== [5.0, 15.0]) {
+            $this->fail($this->errorBlock(
+                'Нарушена корректность бизнес-расчёта бонусов.',
+                [
+                    'Ожидаемые суммы: 5.00 и 15.00',
+                    'Фактические суммы: ' . implode(', ', array_map(
+                        static fn (float $amount): string => number_format($amount, 2, '.', ''),
+                        $amounts
+                    )),
+                    'См: ' . self::GATE_DOC . ' → раздел "Бизнес-процесс"',
+                ]
+            ));
+        }
+
+        self::assertSame([5.0, 15.0], $amounts);
+        $this->success('Бизнес-расчёт бонусов корректен.');
+    }
+
+    #[TestDox('Агрегация продаж через замыкание корректна')]
+    public function testClosureBasedAggregationMustBeCorrect(): void
+    {
+        $this->info('Проверка: суммирование продаж через анонимную функцию не должно терять значения');
+
+        $partners = [
+            new Partner(id: 7, name: 'Closure Partner', tier: 'bronze', active: true),
+        ];
+
+        $sales = [
+            new Sale(id: 1, partnerId: 7, amount: '70.00', productName: 'A', status: 'completed'),
+            new Sale(id: 2, partnerId: 7, amount: '30.00', productName: 'B', status: 'completed'),
+        ];
+
+        $partnerRepository = new class($partners) extends PartnerRepository {
+            public function __construct(private array $partners) {}
+
+            public function findByIds(array $ids): array
+            {
+                return $this->partners;
+            }
+        };
+
+        $saleRepository = new class($sales) extends SaleRepository {
+            public function __construct(private array $sales) {}
+
+            public function findCompletedSalesByPartnerId(int $partnerId): array
+            {
+                return $this->sales;
+            }
+        };
+
+        $bonusRepository = new class extends BonusRepository {
+            public array $saved = [];
+
+            public function __construct() {}
+
+            public function save(Bonus $bonus): void
+            {
+                $this->saved[] = $bonus;
+            }
+        };
+
+        $calculator = new BonusCalculator($partnerRepository, $saleRepository, $bonusRepository);
+        $calculator->calculateForPartners([7], '2026-02');
+
+        $actualAmount = $bonusRepository->saved[0]->getAmount() ?? '0.00';
+        if ($actualAmount !== '5.00') {
+            $this->fail($this->errorBlock(
+                'Нарушена корректность суммирования через замыкание.',
+                [
+                    'Ожидаемый бонус: 5.00 (100.00 * 5% * bronze)',
+                    'Факт: ' . $actualAmount,
+                    'См: README.md → раздел "Бизнес-процесс"',
+                ]
+            ));
+        }
+
+        self::assertSame('5.00', $actualAmount);
+        $this->success('Суммирование через замыкание работает корректно.');
     }
 
     private function createCalculator(): BonusCalculator

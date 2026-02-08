@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
 class CalculateBonusesCommandTest extends TestCase
 {
     use PrettyPhpUnitOutput;
-    private const GATE_DOC = 'docs/interview-gate-process.md';
+    private const GATE_DOC = 'README.md';
 
     #[TestDox('Потребление памяти укладывается в SLA')]
     public function testPartnerLoadingMustBeMemorySafe(): void

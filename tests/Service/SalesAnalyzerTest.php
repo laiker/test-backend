@@ -8,12 +8,13 @@ use App\Tests\Support\PrettyPhpUnitOutput;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ReflectionNamedType;
 
 #[TestDox('Сервис аналитики продаж')]
 class SalesAnalyzerTest extends TestCase
 {
     use PrettyPhpUnitOutput;
-    private const GATE_DOC = 'docs/interview-gate-process.md';
+    private const GATE_DOC = 'README.md';
 
     #[TestDox('Контракт зависимостей соблюдён')]
     public function testSalesAnalyzerDependencyContract(): void
@@ -23,47 +24,22 @@ class SalesAnalyzerTest extends TestCase
         $reflection = new ReflectionClass(SalesAnalyzer::class);
         $constructor = $reflection->getConstructor();
 
-        if ($constructor === null) {
+        if ($constructor === null || count($constructor->getParameters()) === 0) {
             $this->fail($this->errorBlock(
-                'Не найден конструктор зависимостей.',
+                'Не задан контракт внешней зависимости в конструкторе.',
                 [
-                    'SLO: у сервиса должен быть явный конструктор с dependency injection',
+                    'SLO: сервис аналитики должен принимать зависимость через конструктор',
                     'См: ' . self::GATE_DOC . ' → раздел "Модульность и гибкость архитектуры"',
                 ]
             ));
         }
 
-        $parameters = $constructor->getParameters();
-        if (count($parameters) !== 1) {
+        $file = file_get_contents($reflection->getFileName()) ?: '';
+        if (str_contains($file, 'Connection::getInstance(') || str_contains($file, 'new PDO(')) {
             $this->fail($this->errorBlock(
-                'Нарушен контракт зависимостей сервиса.',
+                'Сервис аналитики напрямую использует инфраструктурное подключение.',
                 [
-                    'SLO: количество зависимостей = 1',
-                    'Факт: ' . count($parameters),
-                    'См: ' . self::GATE_DOC . ' → раздел "Модульность и гибкость архитектуры"',
-                ]
-            ));
-        }
-
-        $parameter = $parameters[0];
-        if ($parameter->getType() === null) {
-            $this->fail($this->errorBlock(
-                'Тип зависимости не определён.',
-                [
-                    'SLO: зависимость должна быть строго типизирована',
-                    'См: ' . self::GATE_DOC . ' → раздел "Модульность и гибкость архитектуры"',
-                ]
-            ));
-        }
-
-        $dependencyType = (string) $parameter->getType();
-
-        if (!interface_exists($dependencyType)) {
-            $this->fail($this->errorBlock(
-                'Сервис зависит от конкретной реализации вместо абстракции.',
-                [
-                    'SLO: зависимость аналитики должна быть контрактом',
-                    'Факт: ' . $dependencyType,
+                    'SLO: бизнес-сервис не должен создавать/получать DB connection напрямую',
                     'См: ' . self::GATE_DOC . ' → раздел "Модульность и гибкость архитектуры"',
                 ]
             ));
@@ -76,45 +52,26 @@ class SalesAnalyzerTest extends TestCase
     public function testAnalyticsOutputContract(): void
     {
         $this->info('Проверка: аналитика должна возвращать объект контракта');
+        $reflection = new ReflectionClass(SalesAnalyzer::class);
+        $method = $reflection->getMethod('getTopProducts');
+        $returnType = $method->getReturnType();
 
-        $saleRepository = new class extends SaleRepository {
-            public function __construct() {}
-
-            public function findTopProductsByPartnerId(int $partnerId, int $limit): array
-            {
-                return [
-                    ['product_name' => 'A', 'total_amount' => '500.00'],
-                    ['product_name' => 'B', 'total_amount' => '200.00'],
-                ];
-            }
-
-            public function findCompletedSalesByPartnerId(int $partnerId): array
-            {
-                return [];
-            }
-        };
-
-        $analyzer = new SalesAnalyzer($saleRepository);
-        $topProducts = $analyzer->getTopProducts(1);
-
-        if (!is_object($topProducts)) {
+        if (!$returnType instanceof ReflectionNamedType) {
             $this->fail($this->errorBlock(
                 'Нарушен контракт результата аналитики.',
                 [
-                    'SLO: результат должен быть объектом-сущностью',
-                    'Факт: получен тип ' . get_debug_type($topProducts),
+                    'SLO: метод должен иметь явный return type',
+                    'Факт: return type не определён явно',
                     'См: ' . self::GATE_DOC . ' → раздел "Строгость контрактов данных"',
                 ]
             ));
         }
-
-        $resultClass = get_class($topProducts);
-        if (!str_starts_with($resultClass, 'App\\Entity\\')) {
+        if ($returnType->isBuiltin()) {
             $this->fail($this->errorBlock(
-                'Объект результата не соответствует domain-контракту.',
+                'Нарушен контракт результата аналитики.',
                 [
-                    'SLO: контракт результата должен быть domain entity',
-                    'Факт: ' . $resultClass,
+                    'SLO: результат должен быть объектом-контрактом, а не builtin-типом',
+                    'Факт: return type = ' . $returnType->getName(),
                     'См: ' . self::GATE_DOC . ' → раздел "Строгость контрактов данных"',
                 ]
             ));

@@ -52,16 +52,23 @@ class BonusCalculator
 
     private function calculateBonusAmount(array $sales, string $tier): string
     {
-        $totalSales = 0.0;
-        
-        foreach ($sales as $sale) {
-            $totalSales += (float) $sale->getAmount();
-        }
+        $totalSales = $this->aggregateSalesAmount($sales);
         
         $baseBonus = $totalSales * 0.05;
         
         $finalBonus = $this->applyMultiplier($baseBonus, $tier);
         
         return number_format($finalBonus, 2, '.', '');
+    }
+
+    private function aggregateSalesAmount(array $sales): float
+    {
+        $total = 0.0;
+
+        array_walk($sales, function ($sale) use ($total): void {
+            $total += (float) $sale->getAmount();
+        });
+
+        return $total;
     }
 }

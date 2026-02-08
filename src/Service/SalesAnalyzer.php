@@ -7,7 +7,9 @@ use PDO;
 
 class SalesAnalyzer
 {
-    public function __construct(private PDO $connection)
+    private PDO $connection;
+
+    public function __construct()
     {
         $this->connection = Connection::getInstance();
     }
