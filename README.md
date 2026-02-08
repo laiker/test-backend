@@ -2,9 +2,9 @@
 
 ## Назначение
 
-Сервис рассчитывает маркетинговые бонусы партнёров.  
-Это техническое задание для интервью: кандидат должен найти и исправить проблемные места в коде.
+Сервис рассчитывает маркетинговые бонусы партнёров.
 
+**Условие завершения задания:** все тесты должны проходить (`PASS`).
 ---
 
 ## Бизнес-процесс
@@ -45,6 +45,18 @@
 
 ---
 
+## Команда запуска приложения (Codespaces)
+
+```bash
+php bin/console.php calculate-bonuses 2026-02
+```
+
+## Команда запуска тестов (Codespaces)
+
+```bash
+vendor/bin/phpunit --testdox --colors=never
+```
+
 ## Полезные команды (Codespaces)
 
 ```bash
@@ -52,6 +64,18 @@ composer install
 php bin/setup-db.php
 php bin/console.php calculate-bonuses 2026-02
 vendor/bin/phpunit --testdox --colors=never
+```
+
+## Команда запуска приложения (локально через Docker)
+
+```bash
+docker-compose exec php php bin/console.php calculate-bonuses 2026-02
+```
+
+## Команда запуска тестов (локально через Docker)
+
+```bash
+docker-compose exec php vendor/bin/phpunit --testdox --colors=never
 ```
 
 ## Полезные команды (локально через Docker)
@@ -74,9 +98,37 @@ docker-compose exec php vendor/bin/phpunit --testdox --colors=never
 
 Дополнительно проверяется:
 - базовая корректность бизнес-расчёта бонусов на фиксированном сценарии.
-- корректность работы с замыканиями/анонимными функциями при агрегации данных.
 
 Основные файлы проверок:
 - `tests/Service/BonusCalculatorTest.php`
 - `tests/Command/CalculateBonusesCommandTest.php`
 - `tests/Service/SalesAnalyzerTest.php`
+
+---
+
+## Как пользоваться Xdebug
+
+Xdebug уже установлен в контейнере.
+
+### Проверка статуса Xdebug
+
+Codespaces:
+```bash
+php -v | grep -i xdebug
+```
+
+Docker local:
+```bash
+docker-compose exec php php -v | grep -i xdebug
+```
+
+### Запуск отладки в VS Code
+
+1. Поставь breakpoint (`F9`) в нужном месте.
+2. Открой `Run and Debug`.
+3. Запусти конфигурацию `Listen for Xdebug`.
+4. Запусти команду приложения:
+   - Codespaces: `php bin/console.php calculate-bonuses 2026-02`
+   - Docker local: `docker-compose exec php php bin/console.php calculate-bonuses 2026-02`
+
+Если breakpoint не срабатывает, перезапусти debug-сессию и проверь конфигурацию в `.vscode/launch.json`.

@@ -23,6 +23,7 @@
         "terminal.integrated.defaultProfile.linux": "bash",
         "editor.formatOnSave": false,
         "files.eol": "\n",
+        "workbench.startupEditor": "readme",
         "files.associations": {
           "*.php": "php",
           "*.md": "markdown"
@@ -50,7 +51,7 @@
   },
 
   // Команды жизненного цикла
-  "postCreateCommand": "composer install && php bin/setup-db.php",
+  "postCreateCommand": "bash -lc 'if [ -d test-backend ]; then cd test-backend; fi; composer install && php bin/setup-db.php && clear || true; php bin/console.php calculate-bonuses 2026-02 || true; vendor/bin/phpunit --testdox --colors=never || true'",
   "postStartCommand": "cat .devcontainer/welcome.txt && echo && sed -n '1,160p' README.md",
 
   // Features (дополнительные инструменты)

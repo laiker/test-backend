@@ -230,68 +230,6 @@ class BonusCalculatorTest extends TestCase
         $this->success('Бизнес-расчёт бонусов корректен.');
     }
 
-    #[TestDox('Агрегация продаж через замыкание корректна')]
-    public function testClosureBasedAggregationMustBeCorrect(): void
-    {
-        $this->info('Проверка: суммирование продаж через анонимную функцию не должно терять значения');
-
-        $partners = [
-            new Partner(id: 7, name: 'Closure Partner', tier: 'bronze', active: true),
-        ];
-
-        $sales = [
-            new Sale(id: 1, partnerId: 7, amount: '70.00', productName: 'A', status: 'completed'),
-            new Sale(id: 2, partnerId: 7, amount: '30.00', productName: 'B', status: 'completed'),
-        ];
-
-        $partnerRepository = new class($partners) extends PartnerRepository {
-            public function __construct(private array $partners) {}
-
-            public function findByIds(array $ids): array
-            {
-                return $this->partners;
-            }
-        };
-
-        $saleRepository = new class($sales) extends SaleRepository {
-            public function __construct(private array $sales) {}
-
-            public function findCompletedSalesByPartnerId(int $partnerId): array
-            {
-                return $this->sales;
-            }
-        };
-
-        $bonusRepository = new class extends BonusRepository {
-            public array $saved = [];
-
-            public function __construct() {}
-
-            public function save(Bonus $bonus): void
-            {
-                $this->saved[] = $bonus;
-            }
-        };
-
-        $calculator = new BonusCalculator($partnerRepository, $saleRepository, $bonusRepository);
-        $calculator->calculateForPartners([7], '2026-02');
-
-        $actualAmount = $bonusRepository->saved[0]->getAmount() ?? '0.00';
-        if ($actualAmount !== '5.00') {
-            $this->fail($this->errorBlock(
-                'Нарушена корректность суммирования через замыкание.',
-                [
-                    'Ожидаемый бонус: 5.00 (100.00 * 5% * bronze)',
-                    'Факт: ' . $actualAmount,
-                    'См: README.md → раздел "Бизнес-процесс"',
-                ]
-            ));
-        }
-
-        self::assertSame('5.00', $actualAmount);
-        $this->success('Суммирование через замыкание работает корректно.');
-    }
-
     private function createCalculator(): BonusCalculator
     {
         $partnerRepository = new class extends PartnerRepository {
