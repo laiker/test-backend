@@ -1,0 +1,64 @@
+{
+  "name": "PHP Interview - Bonus System",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "workspace",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+
+  // Настройки VS Code
+  "customizations": {
+    "vscode": {
+      // Расширения для PHP разработки
+      "extensions": [
+        "xdebug.php-debug",
+        "bmewburn.vscode-intelephense-client",
+        "DEVSENSE.phptools-vscode",
+        "formulahendry.auto-close-tag",
+        "EditorConfig.EditorConfig"
+      ],
+      
+      // Настройки редактора
+      "settings": {
+        "php.validate.executablePath": "/usr/local/bin/php",
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": false,
+        "files.eol": "\n",
+        
+        // Xdebug configuration
+        "php.debug.executablePath": "/usr/local/bin/php",
+        "php.debug.port": 9003,
+        
+        // Disable telemetry
+        "telemetry.telemetryLevel": "off"
+      }
+    }
+  },
+
+  // Порты для проброса
+  "forwardPorts": [9003],
+  "portsAttributes": {
+    "9003": {
+      "label": "Xdebug",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // Команды жизненного цикла
+  "postCreateCommand": "composer install && php bin/setup-db.php",
+  "postStartCommand": "cat .devcontainer/welcome.txt",
+
+  // Features (дополнительные инструменты)
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  // Переменные окружения
+  "containerEnv": {
+    "XDEBUG_MODE": "debug",
+    "XDEBUG_CONFIG": "client_host=localhost client_port=9003"
+  },
+
+  // Права пользователя
+  "remoteUser": "vscode"
+}

@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_XDEBUG: ${INSTALL_XDEBUG:-true}
+    container_name: bonus_php
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bonus_db
+      DB_USER: bonus_user
+      DB_PASSWORD: bonus_pass
+    depends_on:
+      - postgres
+    ports:
+      - "9003:9003"  # Xdebug port
+    networks:
+      - bonus_network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: bonus_postgres
+    environment:
+      POSTGRES_DB: bonus_db
+      POSTGRES_USER: bonus_user
+      POSTGRES_PASSWORD: bonus_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./fixtures/test_data.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - bonus_network
+
+volumes:
+  postgres_data:
+
+networks:
+  bonus_network:
+    driver: bridge

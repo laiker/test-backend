@@ -1,0 +1,41 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║    Welcome to PHP Backend Developer Interview!               ║
+║    Bonus Calculation System                                   ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+🎯 YOUR TASK
+   Find and fix 5 intentionally placed bugs in 45 minutes.
+   Minimum to pass: 3 out of 5 bugs.
+
+🚀 QUICK START
+   Run this command to see the bugs in action:
+   
+   php bin/console.php calculate-bonuses 2026-02
+
+📊 CHECK DATABASE
+   psql -h postgres -U bonus_user -d bonus_db
+   Password: bonus_pass
+
+🧪 RUN TESTS
+   vendor/bin/phpunit
+
+📚 READ INSTRUCTIONS
+   cat README.md
+
+🔍 AVAILABLE TOOLS
+   ✓ PHP 8.4 with Xdebug
+   ✓ PostgreSQL 15
+   ✓ PHPUnit 11
+   ✓ All development tools
+
+💡 TIPS
+   - Use Xdebug breakpoints (F9)
+   - Check SQL queries: docker logs interview-postgres
+   - Watch memory usage in command output
+   - Think about SOLID principles
+
+⏱️  TIME STARTS NOW!
+
+Good luck! 🍀
