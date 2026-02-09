@@ -3,7 +3,6 @@
 namespace App\Repository;
 
 use App\Database\Connection;
-use App\Diagnostics\RuntimeDiagnostics;
 use App\Entity\Bonus;
 use DateTimeImmutable;
 use PDO;
@@ -19,10 +18,8 @@ class BonusRepository
 
     public function save(Bonus $bonus): void
     {
-        RuntimeDiagnostics::increment('bonus.save.calls');
-
         $stmt = $this->connection->prepare(
-            'INSERT INTO bonuses (partner_id, amount, period, calculated_at) 
+            'INSERT INTO bonuses (partner_id, amount, period, calculated_at)
              VALUES (:partner_id, :amount, :period, :calculated_at)'
         );
 

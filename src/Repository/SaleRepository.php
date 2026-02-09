@@ -3,7 +3,6 @@
 namespace App\Repository;
 
 use App\Database\Connection;
-use App\Diagnostics\RuntimeDiagnostics;
 use App\Entity\Sale;
 use DateTimeImmutable;
 use PDO;
@@ -19,11 +18,9 @@ class SaleRepository
 
     public function findCompletedSalesByPartnerId(int $partnerId): array
     {
-        RuntimeDiagnostics::increment('sales.find_by_partner.calls');
-
         $stmt = $this->connection->prepare(
-            "SELECT * FROM sales 
-             WHERE partner_id = :partner_id 
+            "SELECT * FROM sales
+             WHERE partner_id = :partner_id
              AND status = 'completed'
              ORDER BY created_at DESC"
         );
@@ -34,22 +31,18 @@ class SaleRepository
             $sales[] = $this->hydrate($data);
         }
 
-        RuntimeDiagnostics::increment('sales.find_by_partner.rows', count($sales));
-
         return $sales;
     }
 
     public function findCompletedSalesByPartnerIds(array $partnerIds): array
     {
-        RuntimeDiagnostics::increment('sales.find_by_partner_ids.calls');
-
         if (empty($partnerIds)) {
             return [];
         }
 
         $placeholders = implode(',', array_fill(0, count($partnerIds), '?'));
         $stmt = $this->connection->prepare(
-            "SELECT * FROM sales 
+            "SELECT * FROM sales
              WHERE partner_id IN ({$placeholders})
              AND status = 'completed'
              ORDER BY partner_id, created_at DESC"
@@ -60,8 +53,6 @@ class SaleRepository
         while ($data = $stmt->fetch()) {
             $sales[] = $this->hydrate($data);
         }
-
-        RuntimeDiagnostics::increment('sales.find_by_partner_ids.rows', count($sales));
 
         return $sales;
     }

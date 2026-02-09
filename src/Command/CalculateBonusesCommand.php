@@ -2,7 +2,6 @@
 
 namespace App\Command;
 
-use App\Diagnostics\RuntimeDiagnostics;
 use App\Service\BonusCalculator;
 use App\Repository\PartnerRepository;
 
@@ -15,8 +14,6 @@ class CalculateBonusesCommand
 
     public function execute(string $period): int
     {
-        RuntimeDiagnostics::reset();
-
         echo "Calculating bonuses for period: {$period}\n";
         echo str_repeat('-', 72) . "\n";
 

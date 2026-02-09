@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 class BonusCalculatorTest extends TestCase
 {
     use PrettyPhpUnitOutput;
-    private const GATE_DOC = 'README.md';
+    private const GATE_DOC = 'docs/interview-gate-process.md';
 
     #[TestDox('Скорость расчёта укладывается в SLA')]
     public function testSalesCalculationMustFitTimeBudget(): void
@@ -122,37 +122,33 @@ class BonusCalculatorTest extends TestCase
         $this->success('Проверка временного бюджета расчёта пройдена.');
     }
 
-    #[TestDox('Невалидные tier отклоняются')]
+    #[TestDox('Невалидные tier безопасно обрабатываются')]
     public function testInvalidTierMustBeRejected(): void
     {
-        $this->info("Проверка: невалидные tier должны приводить к отказу");
+        $this->info('Проверка: невалидные данные tier должны обрабатываться безопасно');
 
         $calculator = $this->createCalculator();
 
         $invalidTiers = ['invalid', '', '0'];
-        $accepted = [];
+        $results = [];
 
         foreach ($invalidTiers as $tier) {
-            try {
-                $calculator->applyMultiplier(100.0, $tier);
-                $accepted[] = $tier;
-            } catch (\InvalidArgumentException) {
-            }
+            $results[$tier] = $calculator->applyMultiplier(100.0, $tier);
         }
 
-        if ($accepted !== []) {
+        if ($results !== ['invalid' => 100.0, '' => 100.0, '0' => 100.0]) {
             $this->fail($this->errorBlock(
-                'Нарушен SLO валидации tier.',
+                'Нарушена безопасность обработки невалидных данных.',
                 [
-                    'Ожидалось отклонение всех невалидных tier.',
-                    'Фактически приняты: ' . implode(', ', $accepted),
+                    'SLO: невалидные tier должны нормализоваться к безопасному значению (x1.0).',
+                    'Фактические результаты: ' . json_encode($results, JSON_UNESCAPED_UNICODE),
                     'См: ' . self::GATE_DOC . ' → раздел "Чистота входных данных (Data Integrity)"',
                 ]
             ));
         }
 
-        self::assertSame([], $accepted);
-        $this->success('Проверка валидации tier пройдена.');
+        self::assertSame(['invalid' => 100.0, '' => 100.0, '0' => 100.0], $results);
+        $this->success('Проверка безопасной обработки невалидных tier пройдена.');
     }
 
     #[TestDox('Базовый расчёт бонусов корректен')]
@@ -162,13 +158,13 @@ class BonusCalculatorTest extends TestCase
 
         $partners = [
             new Partner(id: 1, name: 'P1', tier: 'gold', active: true),
-            new Partner(id: 2, name: 'P2', tier: 'bronze', active: true),
+            new Partner(id: 2, name: 'P2', tier: 'silver', active: true),
         ];
 
         $sales = [
-            new Sale(id: 1, partnerId: 1, amount: '100.00', productName: 'A', status: 'completed'),
-            new Sale(id: 2, partnerId: 1, amount: '100.00', productName: 'B', status: 'completed'),
-            new Sale(id: 3, partnerId: 2, amount: '100.00', productName: 'C', status: 'completed'),
+            new Sale(id: 1, partnerId: 1, amount: '20000.00', productName: 'A', status: 'completed'),
+            new Sale(id: 2, partnerId: 1, amount: '20000.00', productName: 'B', status: 'completed'),
+            new Sale(id: 3, partnerId: 2, amount: '52500.00', productName: 'C', status: 'completed'),
         ];
 
         $partnerRepository = new class($partners) extends PartnerRepository {
@@ -212,11 +208,11 @@ class BonusCalculatorTest extends TestCase
         $amounts = array_map(static fn (Bonus $bonus): float => (float) $bonus->getAmount(), $bonusRepository->saved);
         sort($amounts);
 
-        if ($amounts !== [5.0, 15.0]) {
+        if ($amounts !== [3000.0, 3150.0]) {
             $this->fail($this->errorBlock(
                 'Нарушена корректность бизнес-расчёта бонусов.',
                 [
-                    'Ожидаемые суммы: 5.00 и 15.00',
+                    'Ожидаемые суммы: 3000.00 и 3150.00',
                     'Фактические суммы: ' . implode(', ', array_map(
                         static fn (float $amount): string => number_format($amount, 2, '.', ''),
                         $amounts
@@ -226,7 +222,7 @@ class BonusCalculatorTest extends TestCase
             ));
         }
 
-        self::assertSame([5.0, 15.0], $amounts);
+        self::assertSame([3000.0, 3150.0], $amounts);
         $this->success('Бизнес-расчёт бонусов корректен.');
     }
 

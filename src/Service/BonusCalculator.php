@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\Diagnostics\RuntimeDiagnostics;
 use App\Entity\Bonus;
 use App\Repository\PartnerRepository;
 use App\Repository\SaleRepository;
@@ -19,20 +18,20 @@ class BonusCalculator
     public function calculateForPartners(array $partnerIds, string $period): void
     {
         $partners = $this->partnerRepository->findByIds($partnerIds);
-        
+
         foreach ($partners as $partner) {
             $sales = $this->saleRepository->findCompletedSalesByPartnerId(
                 $partner->getId()
             );
-            
+
             $bonusAmount = $this->calculateBonusAmount($sales, $partner->getTier());
-            
+
             $bonus = new Bonus(
                 partnerId: $partner->getId(),
                 amount: $bonusAmount,
                 period: $period,
             );
-            
+
             $this->bonusRepository->save($bonus);
         }
     }
@@ -45,19 +44,14 @@ class BonusCalculator
             'bronze' => 1.0,
         ];
 
-        $multiplier = $multipliers[$tier] ?? $multipliers['gold'];
-        
-        return $baseBonus * $multiplier;
+        return $baseBonus * $multipliers[$tier];
     }
 
     private function calculateBonusAmount(array $sales, string $tier): string
     {
         $totalSales = $this->aggregateSalesAmount($sales);
-        
         $baseBonus = $totalSales * 0.05;
-        
         $finalBonus = $this->applyMultiplier($baseBonus, $tier);
-        
         return number_format($finalBonus, 2, '.', '');
     }
 
@@ -65,7 +59,7 @@ class BonusCalculator
     {
         $total = 0.0;
 
-        array_walk($sales, function ($sale) use ($total): void {
+        array_walk($sales, function ($sale) use ($total) {
             $total += (float) $sale->getAmount();
         });
 

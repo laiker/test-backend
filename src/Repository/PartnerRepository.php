@@ -3,7 +3,6 @@
 namespace App\Repository;
 
 use App\Database\Connection;
-use App\Diagnostics\RuntimeDiagnostics;
 use App\Entity\Partner;
 use PDO;
 
@@ -33,8 +32,6 @@ class PartnerRepository
 
     public function findByIds(array $ids): array
     {
-        RuntimeDiagnostics::increment('partner.find_by_ids.calls');
-
         if (empty($ids)) {
             return [];
         }
@@ -50,15 +47,11 @@ class PartnerRepository
             $partners[] = $this->hydrate($data);
         }
 
-        RuntimeDiagnostics::increment('partner.find_by_ids.loaded', count($partners));
-
         return $partners;
     }
 
     public function findActivePartners(): array
     {
-        RuntimeDiagnostics::increment('partner.find_active.calls');
-
         $stmt = $this->connection->query(
             'SELECT * FROM partners WHERE active = true ORDER BY id'
         );
@@ -67,8 +60,6 @@ class PartnerRepository
         while ($data = $stmt->fetch()) {
             $partners[] = $this->hydrate($data);
         }
-
-        RuntimeDiagnostics::increment('partner.find_active.loaded', count($partners));
 
         return $partners;
     }

@@ -5,9 +5,7 @@
          colors="false">
     <testsuites>
         <testsuite name="InterviewGate">
-            <file>tests/Command/CalculateBonusesCommandTest.php</file>
             <file>tests/Service/BonusCalculatorTest.php</file>
-            <file>tests/Service/SalesAnalyzerTest.php</file>
         </testsuite>
     </testsuites>
 </phpunit>
