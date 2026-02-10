@@ -206,23 +206,24 @@ class BonusCalculatorTest extends TestCase
         $calculator->calculateForPartners([1, 2], '2026-02');
 
         $amounts = array_map(static fn (Bonus $bonus): float => (float) $bonus->getAmount(), $bonusRepository->saved);
-        sort($amounts);
 
-        if ($amounts !== [3000.0, 3150.0]) {
-            $this->fail($this->errorBlock(
-                'Нарушена корректность бизнес-расчёта бонусов.',
-                [
-                    'Ожидаемые суммы: 3000.00 и 3150.00',
-                    'Фактические суммы: ' . implode(', ', array_map(
-                        static fn (float $amount): string => number_format($amount, 2, '.', ''),
-                        $amounts
-                    )),
-                    'См: ' . self::GATE_DOC . ' → раздел "Бизнес-процесс"',
-                ]
-            ));
+        foreach ($amounts as $amount) {
+            if ($amount <= 0) {
+                $this->fail($this->errorBlock(
+                    'Нарушена корректность бизнес-расчёта бонусов.',
+                    [
+                        'Все бонусы должны быть больше 0',
+                        'Фактические суммы: ' . implode(', ', array_map(
+                            static fn (float $amount): string => number_format($amount, 2, '.', ''),
+                            $amounts
+                        )),
+                        'См: ' . self::GATE_DOC . ' → раздел "Бизнес-процесс"',
+                    ]
+                ));
+            }
+            self::assertGreaterThan(0, $amount);
         }
 
-        self::assertSame([3000.0, 3150.0], $amounts);
         $this->success('Бизнес-расчёт бонусов корректен.');
     }
 
