@@ -8,7 +8,7 @@ use PDO;
 
 class PartnerRepository
 {
-    private PDO $connection;
+    private ?PDO $connection = null;
 
     public function __construct()
     {

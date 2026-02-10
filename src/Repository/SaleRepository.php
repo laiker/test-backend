@@ -9,7 +9,7 @@ use PDO;
 
 class SaleRepository
 {
-    private PDO $connection;
+    private ?PDO $connection = null;
 
     public function __construct()
     {

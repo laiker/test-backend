@@ -9,7 +9,7 @@ use PDO;
 
 class BonusRepository
 {
-    private PDO $connection;
+    private ?PDO $connection = null;
 
     public function __construct()
     {
